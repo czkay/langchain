@@ -68,10 +68,10 @@ def _get_default_llm_chain_factory(
 # Orchestrator, planner, controller.
 #
 def _create_api_planner_tool(
-    api_spec: ReducedOpenAPISpec, llm: BaseLanguageModel
+    filtered_schema: str, llm: BaseLanguageModel
 ) -> Tool:
     endpoint_descriptions = [
-        f"{name} {description}" for name, description, _ in api_spec.endpoints
+        f"{name} {description}" for name, description, _ in filtered_schema.endpoints
     ]
     prompt = PromptTemplate(
         template=API_PLANNER_PROMPT,
@@ -165,7 +165,7 @@ def _create_api_controller_tool(
 
 
 def create_openapi_agent(
-    api_spec: ReducedOpenAPISpec,
+    filtered_schema: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
@@ -183,8 +183,8 @@ def create_openapi_agent(
     that invokes a controller with its plan. This is to keep the planner simple.
     """
     tools = [
-        _create_api_planner_tool(api_spec, llm),
-        _create_api_controller_tool(api_spec, requests_wrapper, llm),
+        _create_api_planner_tool(filtered_schema, llm),
+        _create_api_controller_tool(filtered_schema, requests_wrapper, llm),
     ]
     prompt = PromptTemplate(
         template=API_ORCHESTRATOR_PROMPT,
