@@ -104,8 +104,8 @@ API_CONTROLLER_TOOL_DESCRIPTION = f"Can be used to execute a plan of API calls, 
 # Orchestrate planning + execution.
 # The goal is to have an agent at the top-level (e.g. so it can recover from errors and re-plan) while
 # keeping planning (and specifically the planning prompt) simple.
-API_ORCHESTRATOR_PROMPT = """You are an agent that assists with user queries against API, things like querying information or creating resources.
-Some user queries can be resolved in a single API call, particularly if you can find appropriate params from the OpenAPI spec; though some require several API calls.
+API_ORCHESTRATOR_PROMPT = """You are an agent that assists with user queries against a GraphQL endpoint, things like querying information or creating resources.
+Some user queries can be resolved in a single API call, particularly if you can find appropriate params from the GraphQL schema; though some require several API calls.
 You should always plan your API calls first, and then execute the plan second.
 If the plan includes a DELETE call, be sure to ask the User for authorization first unless the User has specifically asked to delete something.
 You should never return information without executing the api_controller tool.
@@ -127,18 +127,46 @@ Final Answer: the final output from executing the plan
 
 
 Example:
-User query: can you add some trendy stuff to my shopping cart.
+User query: can you retrieve how many characters are in Rick and Morty? and the last-known location of Rick?
 Thought: I should plan API calls first.
 Action: api_planner
-Action Input: I need to find the right API calls to add trendy items to the users shopping cart
-Observation: 1) GET /items with params 'trending' is 'True' to get trending item ids
-2) GET /user to get user
-3) POST /cart to post the trending items to the user's cart
+Action Input: I need to make two separate queries. I need to generate the right GraphQL query to find out how many characters are in the Rick and Morty show, and also generate the right GraphQL query to find Rick's last-known location.
+Observation: 1) {
+  characters {
+    info {
+      count
+    }
+  }
+} to get the number of characters from the show.
+2) {
+  characters(filter: { name: "Rick" }) {
+    results {
+      name
+      location {
+        name
+      }
+    }
+  }
+} to get Rick's location.
 Thought: I'm ready to execute the API calls.
 Action: api_controller
-Action Input: 1) GET /items params 'trending' is 'True' to get trending item ids
-2) GET /user to get user
-3) POST /cart to post the trending items to the user's cart
+Action Input: 1) {
+  characters {
+    info {
+      count
+    }
+  }
+}
+2) {
+  characters(filter: { name: "Rick" }) {
+    results {
+      name
+      location {
+        name
+      }
+    }
+  }
+}
 ...
 
 Begin!
