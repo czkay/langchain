@@ -26,6 +26,7 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     REQUESTS_POST_TOOL_DESCRIPTION,
     REQUESTS_PUT_TOOL_DESCRIPTION,
 )
+from langchain.agents import load_tools
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
@@ -40,6 +41,7 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 from langchain.utilities.requests import RequestsWrapper
+
 
 #
 # Requests tools with LLM-instructed extraction of truncated responses.
@@ -90,19 +92,20 @@ def _create_api_planner_tool(
 def _create_api_controller_agent(
     api_url: str,
     api_docs: str,
+    graphql_endpoint: str,
+    plumber_api_key: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
     get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
     post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
-    tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(
-            requests_wrapper=requests_wrapper, llm_chain=get_llm_chain
-        ),
-        RequestsPostToolWithParsing(
-            requests_wrapper=requests_wrapper, llm_chain=post_llm_chain
-        ),
-    ]
+    tools: List[BaseTool] = load_tools(
+            ["graphql"],
+            graphql_endpoint=graphql_endpoint,
+            custom_headers={"x-plumber-api-key": plumber_api_key},
+            auto_fetch_schema=True,
+            llm=llm,
+        )
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
         input_variables=["input", "agent_scratchpad"],
@@ -123,7 +126,9 @@ def _create_api_controller_agent(
 
 
 def _create_api_controller_tool(
-    api_spec: ReducedOpenAPISpec,
+    filtered_schema: ReducedOpenAPISpec,
+    graphql_endpoint: str,
+    plumber_api_key: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> Tool:
@@ -134,7 +139,7 @@ def _create_api_controller_tool(
     constrain the context.
     """
 
-    base_url = api_spec.servers[0]["url"]  # TODO: do better.
+    base_url = filtered_schema.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
         pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
@@ -146,7 +151,7 @@ def _create_api_controller_tool(
         docs_str = ""
         for endpoint_name in endpoint_names:
             found_match = False
-            for name, _, docs in api_spec.endpoints:
+            for name, _, docs in filtered_schema.endpoints:
                 regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
                 if regex_name.match(endpoint_name):
                     found_match = True
@@ -154,7 +159,7 @@ def _create_api_controller_tool(
             if not found_match:
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
 
-        agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
+        agent = _create_api_controller_agent(base_url, docs_str, graphql_endpoint, plumber_api_key, requests_wrapper, llm)
         return agent.run(plan_str)
 
     return Tool(
@@ -166,6 +171,8 @@ def _create_api_controller_tool(
 
 def create_openapi_agent(
     filtered_schema: str,
+    graphql_endpoint: str,
+    plumber_api_key: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
@@ -182,9 +189,10 @@ def create_openapi_agent(
     rather than a top-level planner
     that invokes a controller with its plan. This is to keep the planner simple.
     """
+
     tools = [
         _create_api_planner_tool(filtered_schema, llm),
-        _create_api_controller_tool(filtered_schema, requests_wrapper, llm),
+        _create_api_controller_tool(filtered_schema, graphql_endpoint, plumber_api_key, requests_wrapper, llm),
     ]
     prompt = PromptTemplate(
         template=API_ORCHESTRATOR_PROMPT,
