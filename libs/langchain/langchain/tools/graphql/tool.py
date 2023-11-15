@@ -17,11 +17,14 @@ class BaseGraphQLTool(BaseTool):
     If the query is not correct, an error message will be returned.
     If an error is returned with 'Bad request' in it, rewrite the query and try again.
     If an error is returned with 'Unauthorized' in it, do not try again, but tell the user to change their authentication.
+    If an error is returned with 'Did you mean the enum value' in it, rewrite the query, remove quotes from enum value and try again.
+    Please don't add double quotes around query and mutation keys.
+    Please do not add double quotes around enum values. 
     {example}
     {schema}\
     """  # noqa: E501
 
-    description_example = "Example Input: query {{ allUsers {{ id, name, email }} }}"
+    description_example = "Example query Input: query {{ allUsers {{ id, name, email }} }}. Example mutation Input: mutation {{ createUser(name: \"John Doe\", type: user\") {{id}} }} where user is enum value"    
     description_schema = "Use the following schema for your queries: \n    {schema}\n"
     auto_fetch_schema: bool = False
 

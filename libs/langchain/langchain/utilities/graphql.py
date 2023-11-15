@@ -85,6 +85,7 @@ class GraphQLAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run a GraphQL query and get the results."""
         try:
+            query = query.replace("```", "")
             result = self._execute_query(query)
             return json.dumps(result, indent=2)
         except Exception as e:
