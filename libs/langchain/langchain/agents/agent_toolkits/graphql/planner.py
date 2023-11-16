@@ -15,16 +15,6 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_PLANNER_PROMPT,
     API_PLANNER_TOOL_DESCRIPTION,
     API_PLANNER_TOOL_NAME,
-    PARSING_DELETE_PROMPT,
-    PARSING_GET_PROMPT,
-    PARSING_PATCH_PROMPT,
-    PARSING_POST_PROMPT,
-    PARSING_PUT_PROMPT,
-    REQUESTS_DELETE_TOOL_DESCRIPTION,
-    REQUESTS_GET_TOOL_DESCRIPTION,
-    REQUESTS_PATCH_TOOL_DESCRIPTION,
-    REQUESTS_POST_TOOL_DESCRIPTION,
-    REQUESTS_PUT_TOOL_DESCRIPTION,
 )
 from langchain.agents import load_tools
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
@@ -51,19 +41,6 @@ from langchain.utilities.requests import RequestsWrapper
 # However, the goal for now is to have only a single inference step.
 MAX_RESPONSE_LENGTH = 5000
 """Maximum length of the response to be returned."""
-
-def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
-    return LLMChain(
-        llm=OpenAI(),
-        prompt=prompt,
-    )
-
-
-def _get_default_llm_chain_factory(
-    prompt: BasePromptTemplate,
-) -> Callable[[], LLMChain]:
-    """Returns a default LLMChain factory."""
-    return partial(_get_default_llm_chain, prompt)
 
 
 #
@@ -97,8 +74,6 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
-    get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
-    post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
     tools: List[BaseTool] = load_tools(
             ["graphql"],
             graphql_endpoint=graphql_endpoint,
