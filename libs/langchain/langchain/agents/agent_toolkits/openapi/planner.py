@@ -321,7 +321,7 @@ def create_openapi_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    human_input_func: function = input,
+    human_input_func: Callable[[], str] = input,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Instantiate OpenAI API planner and controller for a given spec.
