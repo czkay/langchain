@@ -37,6 +37,7 @@ from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.tools import HumanInputRun
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 from langchain.utilities.requests import RequestsWrapper
@@ -331,6 +332,7 @@ def create_openapi_agent(
     that invokes a controller with its plan. This is to keep the planner simple.
     """
     tools = [
+        HumanInputRun(),
         _create_api_planner_tool(api_spec, llm),
         _create_api_controller_tool(api_spec, requests_wrapper, llm),
     ]
