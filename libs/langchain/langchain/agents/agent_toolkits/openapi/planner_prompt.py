@@ -84,7 +84,7 @@ Starting below, you should follow this format:
 
 Plan: the plan of API calls to execute
 Thought: you should always think about what to do
-Action: the action to take should be one of the tools [{tool_names}]. only take the 'human' action if you require additional non-technical information from the user.
+Action: the action to take should be one of the tools [{tool_names}].
 Action Input: the input to the action
 Observation: the output of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
@@ -118,7 +118,7 @@ Starting below, you should follow this format:
 
 User query: the query a User wants help with related to the API
 Thought: you should always think about what to do
-Action: the action to take should be one of the tools [{tool_names}]
+Action: the action to take should be one of the tools [{tool_names}]. only take the human action if you require additional non-technical information from the user.
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
